@@ -1,0 +1,134 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define BUFFER_SIZE 1000
+
+
+void removeAll(char * str, const char * toRemove);
+/**
+ * Sterge toate aparitiile unui string dat dintr-un alt sir de caractere dat.
+ */
+void removeAll(char * str, const char * toRemove)
+{
+    int i, j, stringLen, toRemoveLen;
+    int found;
+
+    stringLen   = strlen(str);      // lungimea sirului de caractere dat
+    toRemoveLen = strlen(toRemove); // lungimea sirului de caractere de sters
+
+ // as fi putut folosi strstr, in loc sa fac de cautarea asta manuala aici, dedesubt
+    for(i=0; i <= stringLen - toRemoveLen; i++)
+    {
+        /* Match word with string */
+        found = 1;
+        for(j=0; j < toRemoveLen; j++)
+        {
+            if(str[i + j] != toRemove[j])
+            {
+                found = 0;
+                break;
+            }
+        }
+
+        /* Daca nu am gasit un cuvant(cuvantul e precedat fie de un tab, fie de un spatiu, fie de un endline sau e chiar la finalul sirului de caractere */
+        if(str[i + j] != ' ' && str[i + j] != '\t' && str[i + j] != '\n' && str[i + j] != '\0')
+        {
+            found = 0;
+        }
+
+        /*
+         * Daca am gasit cuvantul, "translatez" spre stanga sirul, suprascriind pozitiile ocupate de cuvantul gasit
+         * si decrementez lungimea sirului
+         */
+        if(found == 1)
+        {
+            for(j=i; j <= stringLen - toRemoveLen; j++)
+            {
+                str[j] = str[j + toRemoveLen];
+            }
+
+            stringLen = stringLen - toRemoveLen;
+
+            // fiindca s-a ales sa se foloseasca for-ul trebuie sa se decrementeze aici i-ul (poate ar fi fost mai pedagogic, sa zic asa, daca s-ar fi optat pentru un while, in loc de for-ul mare)
+            i--; /* daca nu as decrementa aici i-ul (si din nou, atentie! suntem in for!!), pentru un exemplu de genul:
+	    str = "AbcAbcAbc" si toRemove = "Abc", la prima stergere a lui "Abc" s-ar fi ajuns la sirul str="AbcAbc"; totul bine pana aici. Dar i ul nu ar fi ramas pe 0!! Si am fi pornit din
+	    nou cautarea de la i=1, deci de la "bcAbc". I ul trebuie incrementat, doar in momentul in care avem un `miss`, adica nu s-a gasit subsirul in sir!
+	*/
+	}
+    }
+}
+
+
+int main(int argc, char *argv[])
+{
+    FILE * fPtr; // pointer la fisierul in discutie
+    FILE * fTemp; // pointer la un fisier temporar in care voi citi continutul fisierului in discutie
+
+// Obs pentru mine: ATENTIE! argv[0] este chiar numele executabilului(nu s sigur daca e
+// executabil sau e obj ala pe care il apelam noi, cred ca executabil totusi) precedat
+// de punct si forward-slash. Deci in argv[1] am ce ma intereseaza
+    const char *path = argv[1]; // retin intr-o variabila numele fisierului in discutie
+    const char *toRemove = argv[2]; // retin intr-o variabila string ul de eliminat din fisierul in discutie (la fiecare aparitie a sa)
+
+
+
+    char buffer[1000];
+
+    /* Input source file path path */
+
+    // printf("Enter path(name) of source file: ");
+    // scanf("%s", path);
+
+    //printf("Enter word to remove: ");
+    //scanf("%s", toRemove);
+
+    /*  Open files */
+    fPtr  = fopen(path, "r");
+    fTemp = fopen("delete.tmp", "w");
+
+    /* fopen() returneaza NULL daca nu reuseste sa deschida fisierul in modul precizat (read "r" , in cazul meu) */
+//    if (fPtr == NULL || fTemp == NULL) // daca apare o eroare la deschiderea fisierului
+    if (fPtr == NULL) // daca apare o eroare la deschiderea fisierului
+    {
+	// afisez un mesaj de eroare si parasesc executia
+        printf("\nUnable to open file.\n");
+        printf("Please check whether file exists and you have read/write privilege.\n");
+        exit(EXIT_FAILURE);
+    }
+
+// /////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
+
+    /*
+     * Citesc din fisierul sursa si scriu in fisierul destinatie (adica fisierul temporar) dupa ce sterg toate aparitiile string ului dat ca parametru script ului 
+     * din sirul de caractere tocmai citit.
+     */
+    while ((fgets(buffer, BUFFER_SIZE, fPtr)) != NULL) // cat timp poate functia `fgets` sa citeasca siruri de caractere (de lungime maxima `BUFFER_SIZE`): citesc in buffer
+    {
+        // Remove all occurrence of word from current line
+        removeAll(buffer, toRemove);
+
+        // Write to temp file
+        fputs(buffer, fTemp);
+    }
+
+
+    /*  Inchid fisierele */
+    fclose(fPtr);
+    fclose(fTemp);
+
+
+    /* Sterg fisierul initial */
+    remove(path);
+
+    /* Si redenumesc fisierul temporar la numele fisierului initial ( suprascriu fisierul initial ) */
+    rename("delete.tmp", path);
+
+
+    printf("\nAll occurrences of '%s' removed successfully.\n", toRemove);
+
+    return 0;
+}

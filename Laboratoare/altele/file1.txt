@@ -1,0 +1,14 @@
+a
+b
+c
+Aceasta este prima linie care nu va coincide
+e
+f
+gAceasta este a doua
+i
+A treia
+A patra chiar
+si uite-o si pe a cincea
+dar nici asta nu coincide.
+Oare asta e afisata si ea?
+o

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+a=${@: -1} # iau ultimul argument intr o variabila;
+
+for ((i=1; i<$#; i++)) # merg doar pana la penultimul argument (inclusiv acesta)
+	do
+		sed -i "1,30{/$a/d}" "${!i}" # pentru a i-a linie, sterge in-place( nu folosind un buffer si apoi afisand pe ecran) toate liniile din intervalul 1,30
+					       # care contin variabila a( ultimul parametru al scriptului )
+	done
+#Note: De retinut ca trebuie sa folosim double-quoted marks cand vrem sa ne faca variable expansion!

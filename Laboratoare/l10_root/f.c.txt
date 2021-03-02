@@ -1,0 +1,58 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <string.h>
+
+#define Nmax 10005 // zece mii cinci
+
+int main(int argc, const char * argv[])
+//int main() // asa nu as fi avut acces la argumente, i suppose
+{
+	char cmd[1024];
+//	snprintf(cmd, sizeof(cmd), "find /home -name %s", argv[1]);
+	/* nota: daca se dorea de fapt path ul full al directoarelor ce contin fisiere cu
+ acelasi nume cu cel pasat scriptului, nu doar numele directoarelor respective, se poate
+comenta linia cu `snprintf`de mai jos si sa se decomenteze aceasta de deasupra acestui
+comentariu! */
+
+	snprintf(cmd, sizeof(cmd), "find /home -name %s | rev | cut -d/ -f 2 | rev", argv[1]);
+
+	/*EXPLICATIE: retin intr un array de caractere comanda pe care o voi pasa lui `popen`
+De ce retin intr-un array de caractere si nu pasez direct comanda? Pentru ca vreau sa pasez
+primului argument al lui `popen` - care este o comanda (efectiv un string, reprezentand o comanda 
+pe care de regula am scrie-o in command line) - vreau sa ii pasez un argument, reprezentand numele 
+fisierului pe care scriptul in sine il primeste la randul sau ca argument.
+
+(ATENTIE!, m-am mai izbit de problema asta:
+"character array" nu are in orice context aceeasi insemnatate cu " char* ". Stiu ca
+la laboratorul trecut am patit ca nu imi mergea sa scriu in pipe dintr-un motiv de genul;
+nu mai stiu sigur daca era chiar vorba de un pipe sau ceva similar...)
+   */
+
+	char buffer[Nmax];
+	FILE * p = popen(cmd, "r"); /* creez un pipe intre un subproces pe care il deschid
+tot odata cu aceasta comanda `popen` si care executa comanda de mai sus, pasata prin variabila
+'cmd' si scrie in pipe rezultatul acesteia */
+
+	//if(p < 0) {printf("eroare la popen\n"); return -1;}
+	if( p == NULL) {printf("eroare la popen\n"); return -1;} /* verific daca s-a
+putut crea pipe ul intre acest proces / fisier si procesul / fisierul copil (va rog
+ma corectati aici daca gresesc: IS FILE THE SAME THING AS PROCESS? or just sometimes?)
+Pentru ca vad ca lucram cu variabik*/
+
+	while(fgets(buffer, sizeof(buffer), p)) // cat timp pot citi din pipe (obs proprie: e mai bine sa folosim fgets decat read !! e si standardizata comanda si are si alte chestii misto din ce am citit pe net, printre care si faptul ca lucreaza tot cu un buffer!
+	{
+		printf("%s", buffer); // printez ce a scris in pipe comanda pasata lui `popen` 
+// mai sus
+	}
+
+
+	int status = pclose(p);
+	if(status == -1) {printf("eroare la pclose()\n"); return -1;} // verific daca s-a 
+// putut inchide pipe ul
+
+//	printf("Read last time from pipe: %s", buffer);
+
+	return 0;
+}

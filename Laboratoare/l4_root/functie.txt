@@ -1,0 +1,27 @@
+#!/bin/bash
+# NOTA: am lasat cam toate comentariile, m-am gandit ca poate va ajuta sa vedeti cum am gandit, treptat, pana am ajuns la solutie
+
+#last --hostlast $1
+#last | awk | "{print $1}" | head -n -2 | sort | uniq
+# dintre inregistrarile care contin numele de utilizator primit ca parametru
+# selecteaza-le cu `grep` pe cele care au aparut in data precizata de al doilea parametru
+#last | grep "$1" | cut -d' ' 0f1 | head -n -2 | sort uniq
+#last | grep "$1" | cut -d' ' 0f1 | sort uniq
+# last | head -n -2
+#last | head -n -2 | grep "\<$1\>"
+#last | head -n -2 | grep -w "$1"
+#last | head -n -2 | grep "$1" | grep "$2"
+#last | head -n -2 | grep "$1" | cut -d' ' -f1 | grep "$2" | sort | uniq
+#last | head -n -2 | grep "$1" |  grep "$2" | cut -d' ' -f1 | sort | uniq
+#aici sus sunt incercari
+
+last | head -n -2 | grep -w "$1" |  grep -w "$2" | cut -d' ' -f1 | sort | uniq
+
+#explicat pipe:
+#dintre inregistrarile de log-in (comanda last)
+#mai putin ultimele 2 linii ( daca scrieti last in terminal si dati enter, veti observa ca ultimele 2 linii nu ne folosesc)
+#selecteaza-le pe acelea in care apare numele masinii / numele user-ului (ordinea parametrilor e arbitrara; cum doreste user-ul) dupa care
+#trunchiaza din intreg continutul astfel obtinut prima coloana cu date, iar apoi
+#sorteaza aceasta coloana. In final,
+#apeleaza uniq pentru a obtine o multime (deci output nu doar sortat, ci si sub forma de set)
+#(uniq comprima toate liniile identice intr-una, cu conditia ca aceste linii sa fie alaturate, de unde si nevoia de sortare mai intai a output-ului respectiv)

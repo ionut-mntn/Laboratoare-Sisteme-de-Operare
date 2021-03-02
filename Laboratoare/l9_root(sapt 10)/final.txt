@@ -1,0 +1,157 @@
+#include <stdio.h>
+#include <unistd.h> // pt `pipe`
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define Nmax 105
+#define BUFFER_SIZE 1005
+
+void afis(int *v, int dim)
+{
+	for(int i = 0 ; i < dim; i++)
+		printf("v[%d] = %d\n", i, v[i]);
+	printf("\n");
+}
+
+int split_into_tokens(char *buffer, char *numere[])
+{
+	char *p = strtok(buffer, " ");
+	int i = 0;
+
+
+	while(p != NULL)
+	{
+		numere[i] = p;
+	i++;
+	p = strtok(NULL, " ");
+
+	}
+
+	return i;
+}
+
+void convert_to_int(char ** arr, int dim, int *v)
+{
+	for(int i = 0; i < dim; i ++) // era 1 aici ?
+		v[i] = atoi(arr[i]);
+}
+
+void elimin_minim_k_minus_unu_ori(int *v, int *n, int k)
+{
+	int contor = 0;
+	while(contor != k -1) // != k
+	{
+		int minn = v[0], poz_minn = 0;
+		for(int i = 1; i < (*n); i ++)
+			if(v[i] < minn) { minn = v[i]; poz_minn = i; }
+
+		for(int i = poz_minn; i < (*n)-1; i++) // translatare
+			v[i] = v[i+1];
+
+	(*n)--;
+	contor ++;
+	}
+}
+
+
+void elimin_maxxuri(int *v, int *n)
+{
+	while((*n) != 1)
+	{
+		int maxx = v[0], poz_maxx = 0;
+		for(int i = 1; i < (*n); i++)
+			if(v[i] > maxx) { maxx = v[i]; poz_maxx = i; }
+
+//		printf("s a gasit maximul: %d\n", maxx);
+
+		for(int i = poz_maxx; i < (*n)-1; i++)
+			v[i] = v[i+1];
+	(*n)--;
+	}
+}
+
+int main(int argc, const char * argv[])
+{
+	int k = atoi(argv[1]);
+//	printf("k ul pasat este: %d\n", k);
+
+	FILE * fp;
+	int status;
+	char buffer[BUFFER_SIZE];
+	fp = fopen("numere.txt", "r");
+	if(fp==NULL) {printf("Error opening file!\n"); return -1;}
+
+	fgets(buffer, BUFFER_SIZE, fp); // citesc din pipe ce s-a scris in procesul copil in capatul de scriere
+
+	status = fclose(fp);
+	if(status==-1) {printf("Error closing file!\n"); return -1;}
+
+	int pipeChildToParent[2];
+	if(pipe(pipeChildToParent) < 0 ) {printf("Error establishing pipe!\n"); return -1;}
+
+//	printf("buffer = %s\n", buffer);
+
+
+	char *numere[Nmax]; // !!! atentie !!! vad ca la strtok e diferenta intre `char **` si `char * []`
+	int nrNr = split_into_tokens(buffer, numere);
+//	printf("nrNr=%d\n", nrNr);
+
+	int v[Nmax];
+	convert_to_int(numere, nrNr, v);
+
+	pid_t pid = fork();
+	if(pid < 0) {printf("Eroare la fork!\n"); return -1;}
+	else if(pid == 0)
+	{
+		close(pipeChildToParent[0]); // inchid capatul de citire al pipe ului cand sunt in copil!
+
+//		afis(v,nrNr);
+		elimin_minim_k_minus_unu_ori(v, &nrNr, k); // elimin minimul de k - 1 ori;
+//		afis(v,nrNr);
+
+//		printf("sizeof(int) = %ld\n", sizeof(int));
+//		printf("sizeof(v) =  %ld\n", sizeof(v));
+		//write(pipeChildToParent[0], v, sizeof(v)); // nu scriu sizeof v aici pentru ca nu mai am
+		 // "sizeof(v) / sizeof(int)" elemente !!!
+//		printf("sizeof(int) * nrNr = ");
+//		printf(
+//		       "%ld * %d = %ld\n",
+//	     sizeof(int), nrNr, sizeof(int) * nrNr
+//			);
+
+//		printf("in pipe scriu: %d\n", nrNr);
+		if ( write(pipeChildToParent[1], &nrNr, sizeof(int)) < 0) // mai scriu si dimensiunea la final
+		{
+			printf("error!!\n");
+		}
+
+		write(pipeChildToParent[1], v, sizeof(int) * (nrNr)); // 1 e capatul de scriere !!!
+	}
+	else
+	{
+		close(pipeChildToParent[1]); // inchid capatul de scriere al pipe ului cand sunt in parinte!
+		waitpid(pid,&status,0);
+
+		int dim;
+		if( read(pipeChildToParent[0], &dim, sizeof(int)) < 0 ) printf("eroare la citire din pipe\n"); // citesc din pipe dimensiunea vectorului ce urmeaza
+		// a fi citit tot din pipe!
+//		printf("Din pipe am citit: dim = %d\n", dim);
+
+		int aux[Nmax];
+
+		if( read(pipeChildToParent[0], aux, Nmax) < 0) {printf("eroare la citire din pipe!\n"); return -1;}
+
+//		afis(aux, dim);
+		elimin_maxxuri(aux, &dim);
+//		afis(aux, dim);
+
+		printf("Al %d-lea cel mai mic numar dintre numerele din fisier: %d\n", k, aux[0]);
+
+//		printf("(success!)\n");
+
+	}
+
+	return 0;
+}

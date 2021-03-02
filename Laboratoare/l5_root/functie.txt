@@ -1,0 +1,2 @@
+#!/bin/bash
+awk -v totalWords=0 -v totalLines=0 '{F[FILENAME]++;totalLines++;T[FILENAME]+=NF;totalWords+=NF;} END{for (f in F) print f":", T[f] / F[f]} END{print "Medie overall:" totalWords / totalLines}' $@

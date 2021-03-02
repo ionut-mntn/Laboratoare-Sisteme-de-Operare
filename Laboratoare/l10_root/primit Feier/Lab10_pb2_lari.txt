@@ -1,0 +1,148 @@
+#include<stdio.h>
+#include<unistd.h>
+
+int main()
+{
+	int pipefds1[2], pipefds2[2], pipefds3[2], returnstatus1, returnstatus2, returnstatus3, pid1, pid2, pid3, pid4, s, i, j, nr, p, s2;
+	char readmessage[10], b[10], aux, readmessage2[10], readmessage3[10];
+	returnstatus1 = pipe(pipefds1);
+	if (returnstatus1 == -1)
+	{
+		printf("Unable to create pipe 1\n");
+		return 1;
+	}
+	returnstatus2 = pipe(pipefds2);
+	if (returnstatus2 == -1)
+	{
+		printf("Unable to create pipe 2\n");
+		return 1;
+	}
+	returnstatus3 = pipe(pipefds3);
+	if (returnstatus3 == -1)
+	{
+		printf("Unable to create pipe 3\n");
+		return 1;
+	}
+	pid1 = fork();
+	if (pid1 == 0)
+	{
+		pid2 = fork();
+		if (pid2 == 0)
+		{
+			pid3 == fork();
+			if (pid3 == 0)
+			{
+				pid4 = fork();
+				if (pid4 == 0)
+				{
+					close(pipefds1[0]);
+					close(pipefds2[0]);
+					close(pipefds3[0]);
+					printf("Give 10 bytes:\n");
+					scanf("%s", b);
+					write(pipefds1[1], b, sizeof(b));
+					printf("Give 10 bytes:\n");
+					scanf("%s", b);
+					write(pipefds2[1], b, sizeof(b));
+					printf("Give 10 bytes:\n");
+					scanf("%s", b);
+					write(pipefds3[1], b, sizeof(b));
+				}
+				else
+				{
+					wait(NULL);
+					read(pipefds1[0], readmessage, sizeof(readmessage));
+					s = 0;
+					for (i = 0; i < sizeof(readmessage); i++)
+					{
+						if (readmessage[i] >= 'a' && readmessage[i] <= 'z' || readmessage[i] >= 'A' && readmessage[i] <='Z')
+							readmessage[i] = 'Z';
+						else if (readmessage[i] >= '0' && readmessage[i] <= '9')
+							s = s + (readmessage[i] - '0');
+					}
+					nr = 0;
+					s2 = s;
+					while (s2 > 0)
+					{
+						s2 = s2 / 10;
+						nr = nr +1;
+					}
+					p = 1;
+					for (i = 1; i <= nr; i++)
+					{
+						for (j = 0; j < i -1; j++);
+							p = p * 10;
+						readmessage2[nr-i] = (s / p) % 10 + '0';
+					}
+					for (i = 0; i < sizeof(readmessage); i++)
+						if (readmessage[i] == 'Z')
+						{
+							readmessage2[nr] = readmessage[i];
+							nr += 1;
+						}
+					write(pipefds1[1], readmessage2, sizeof(readmessage2));
+				}
+			}
+			else
+			{
+				wait(NULL);
+				read(pipefds2[0], readmessage, sizeof(readmessage));
+				s = 0;
+				for (i = 0; i < sizeof(readmessage); i++)
+				{
+					if (readmessage[i] >= 'a' && readmessage[i] <= 'z' || readmessage[i] >= 'A' && readmessage[i] <='Z')
+						readmessage[i] = 'Z';
+					else if (readmessage[i] >= '0' && readmessage[i] <= '9')
+						s = s + (readmessage[i] - '0');
+				}
+				nr = 0;
+				s2 = s;
+				while (s2 > 0)
+				{
+					s2 = s2 / 10;
+					nr = nr +1;
+				}
+				p = 1;
+				for (i = 1; i <= nr; i++)
+				{
+					for (j = 0; j < i -1; j++);
+						p = p * 10;
+					readmessage3[nr-i] = (s / p) % 10 + '0';
+				}
+				for (i = 0; i < sizeof(readmessage); i++)
+					if (readmessage[i] == 'Z')
+					{
+						readmessage3[nr] = readmessage[i];
+						nr += 1;
+					}
+				write(pipefds2[1], readmessage3, sizeof(readmessage3));
+			}
+		}
+		else
+		{
+			wait(NULL);
+			close(pipefds3[1]);
+			read(pipefds3[0], readmessage, sizeof(readmessage));
+			for (i = 0; i < sizeof(readmessage) - 1; i++)
+				for (j = i + 1; j < sizeof(readmessage); j++)
+					if (readmessage[i] < readmessage[j])
+					{
+						aux = readmessage[i];
+						readmessage[i] = readmessage[j];
+						readmessage[j] = aux;
+					}
+			printf("sorted: %s\n", readmessage);
+		}
+	}
+	else
+	{
+		wait(NULL);
+		close(pipefds1[1]);
+		close(pipefds2[1]);
+		read(pipefds1[0], readmessage, sizeof(readmessage));
+		printf("%s\n", readmessage);
+		read(pipefds2[0], readmessage, sizeof(readmessage));
+		printf("%s\n", readmessage);
+	}
+	return 0;
+}
